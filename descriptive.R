@@ -4,6 +4,8 @@
 # by the method kolgorov-smirnov ("ks") or Shapiro ("shapiro")
 # mean, median, Q1=quantile 0.25, Q3=quantile 0.75, SD = standard deviation.
 # 'output' is median(Q1-Q3) for non-normal data or mean +-SD for normal data.
+# For factor variables with only 2 levels, output is number of "positives"(values equal to the 'max'level), and proportion of 
+# non-missing positives values as percentage
 
 descriptive<-function(x=data.frame(), digits=2, na.rm=TRUE, normality.test="shapiro"){
         if (!normality.test %in% c("shapiro", "ks")){
@@ -19,9 +21,9 @@ descriptive<-function(x=data.frame(), digits=2, na.rm=TRUE, normality.test="shap
         output<-character()
         for (i in seq_along(x)){
                 if (is.numeric(x[,i])){
-                        medians[i]<-median(x[,i], na.rm = na.rm)
-                        Q1[i]<-quantile(x[,i], 0.25, na.rm = na.rm)
-                        Q3[i]<-quantile(x[,i], 0.75, na.rm = na.rm)
+                        medians[i]<-round(median(x[,i], na.rm = na.rm), digits=digits)
+                        Q1[i]<-round(quantile(x[,i], 0.25, na.rm = na.rm), digits=digits)
+                        Q3[i]<-round(quantile(x[,i], 0.75, na.rm = na.rm), digits=digits)
                         means[i]<-round(mean(x[,i], na.rm = na.rm), digits = digits)
                         SDs[i]<-round(sd(x[,i], na.rm=TRUE), digits = digits)
                         if (normality.test=="shapiro"){
@@ -36,14 +38,26 @@ descriptive<-function(x=data.frame(), digits=2, na.rm=TRUE, normality.test="shap
                                 is.normal[i]<-TRUE
                                 output[i]<-paste0(means[i], " +-", SDs[i])
                         }
-                }else  {
+                }else if (is.factor(x[,i]) & length(unique(levels(x[,i])))==2)  {
+                                int<-as.integer(x[,i])
+                                log<-int==max(int)
+                                not.na<-sum(!is.na(int))
+                                proportion<-round(mean(log)*100, digits = digits)
                         is.normal[i]<-NA
                         means[i]<-NA
                         medians[i]<-NA
                         Q1[i]<-NA
                         Q3[i]<-NA
                         SDs[i]<-NA
-                        output[i]<-NA
+                        output[i]<-paste0(sum(log),"(", proportion, "%", ")")
+        } else {
+                is.normal[i]<-NA
+                means[i]<-NA
+                medians[i]<-NA
+                Q1[i]<-NA
+                Q3[i]<-NA
+                SDs[i]<-NA
+                output[i]<-NA    
                 }
         }      
         
